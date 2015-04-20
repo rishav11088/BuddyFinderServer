@@ -1,6 +1,7 @@
 package in.ac.iiitd.buddyfinder.model.client;
 
 import in.ac.iiitd.buddyfinder.model.object.Event;
+import in.ac.iiitd.buddyfinder.model.object.ForumMessage;
 import retrofit.http.*;
 
 import java.util.List;
@@ -22,6 +23,8 @@ public interface EventServiceApi {
     String EVENT_MEMBER_SERVICE_PATH = EVENT_SERVICE_PATH + "/member";
     String MEMBER_ID_QUERY_PARAMETER = "memberId";
 
+    String EVENT_FORUM_SERVICE_PATH = EVENT_SERVICE_PATH + "/{" + EVENT_ID_QUERY_PARAMETER + "}/forum";
+
     @POST(EVENT_SERVICE_PATH)
     boolean addEvent(@Body Event e);
 
@@ -39,4 +42,8 @@ public interface EventServiceApi {
 
     @POST(EVENT_MEMBER_SERVICE_PATH)
     boolean addMemberToEvent(@Query(EVENT_ID_QUERY_PARAMETER) String eventId, @Query(MEMBER_ID_QUERY_PARAMETER) String memberId);
+
+    @GET(EVENT_FORUM_SERVICE_PATH)
+    List<ForumMessage> getForumMessages(@Path(EVENT_ID_QUERY_PARAMETER) String eventId);
+
 }

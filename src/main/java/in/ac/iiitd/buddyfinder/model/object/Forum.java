@@ -13,12 +13,12 @@ public class Forum {
     private List<ForumMessage> forumMessages;
 
     public Forum() {
-        this.forumMessages = new ArrayList<>();
+        this.forumMessages = new ArrayList<ForumMessage>();
     }
 
     public Forum(String id) {
         this.id = id;
-        this.forumMessages = new ArrayList<>();
+        this.forumMessages = new ArrayList<ForumMessage>();
     }
 
     public String getId() {
