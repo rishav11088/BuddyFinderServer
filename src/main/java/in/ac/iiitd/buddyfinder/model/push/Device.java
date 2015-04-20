@@ -15,7 +15,8 @@ public class Device {
     public Device() {
     }
 
-    public Device(String registrationId) {
+    public Device(String id, String registrationId) {
+        this.id = id;
         this.registrationId = registrationId;
     }
 

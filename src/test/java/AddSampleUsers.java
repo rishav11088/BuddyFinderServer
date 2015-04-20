@@ -1,5 +1,7 @@
+import in.ac.iiitd.buddyfinder.model.client.PushNotificationApi;
 import in.ac.iiitd.buddyfinder.model.client.UserServiceApi;
 import in.ac.iiitd.buddyfinder.model.object.User;
+import in.ac.iiitd.buddyfinder.model.push.Device;
 import org.junit.Test;
 import retrofit.RestAdapter;
 import retrofit.mime.TypedFile;
@@ -8,6 +10,7 @@ import java.io.File;
 
 /**
  * Created by Rishav Jain on 19-04-2015.
+ * AddSampleUsers
  */
 public class AddSampleUsers {
 
@@ -17,6 +20,11 @@ public class AddSampleUsers {
                 .setEndpoint("http://localhost:8080")
                 .build()
                 .create(UserServiceApi.class);
+
+        PushNotificationApi pushNotificationApi = new RestAdapter.Builder()
+                .setEndpoint("http://localhost:8080")
+                .build()
+                .create(PushNotificationApi.class);
 
         User user = new User();
         user.setId("0");
@@ -28,6 +36,7 @@ public class AddSampleUsers {
         user = userServiceApi.addUser(user);
         userServiceApi.uploadImage(user.getProfilePhotoUrl(), new TypedFile("image/png",
                 new File("D:\\IIITD\\Semester VIII - Winter 2015\\(CSE5PCSMA) Programming Cloud Services for Mobile Applications\\Project\\nishant.jpg")));
+        pushNotificationApi.registerDevice(new Device(user.getId(), user.getId()));
 
         user = new User();
         user.setId("1");
@@ -39,6 +48,7 @@ public class AddSampleUsers {
         user = userServiceApi.addUser(user);
         userServiceApi.uploadImage(user.getProfilePhotoUrl(), new TypedFile("image/png",
                 new File("D:\\IIITD\\Semester VIII - Winter 2015\\(CSE5PCSMA) Programming Cloud Services for Mobile Applications\\Project\\mayank.jpg")));
+        pushNotificationApi.registerDevice(new Device(user.getId(), user.getId()));
 
         user = new User();
         user.setId("2");
@@ -50,6 +60,7 @@ public class AddSampleUsers {
         user = userServiceApi.addUser(user);
         userServiceApi.uploadImage(user.getProfilePhotoUrl(), new TypedFile("image/png",
                 new File("D:\\IIITD\\Semester VIII - Winter 2015\\(CSE5PCSMA) Programming Cloud Services for Mobile Applications\\Project\\sujit.jpg")));
+        pushNotificationApi.registerDevice(new Device(user.getId(), user.getId()));
     }
 
 

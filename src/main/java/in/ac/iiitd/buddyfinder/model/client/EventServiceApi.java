@@ -46,4 +46,6 @@ public interface EventServiceApi {
     @GET(EVENT_FORUM_SERVICE_PATH)
     List<ForumMessage> getForumMessages(@Path(EVENT_ID_QUERY_PARAMETER) String eventId);
 
+    @POST(EVENT_FORUM_SERVICE_PATH)
+    boolean sendForumMessage(@Path(EVENT_ID_QUERY_PARAMETER) String eventId, @Body ForumMessage forumMessage);
 }

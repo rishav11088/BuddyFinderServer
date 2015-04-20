@@ -1,10 +1,14 @@
 package in.ac.iiitd.buddyfinder.controller;
 
+import in.ac.iiitd.buddyfinder.Application;
 import in.ac.iiitd.buddyfinder.model.client.EventServiceApi;
 import in.ac.iiitd.buddyfinder.model.object.Event;
 import in.ac.iiitd.buddyfinder.model.object.Forum;
 import in.ac.iiitd.buddyfinder.model.object.ForumMessage;
 import in.ac.iiitd.buddyfinder.model.object.User;
+import in.ac.iiitd.buddyfinder.model.push.Data;
+import in.ac.iiitd.buddyfinder.model.push.Device;
+import in.ac.iiitd.buddyfinder.repository.DeviceRepository;
 import in.ac.iiitd.buddyfinder.repository.EventRepository;
 import in.ac.iiitd.buddyfinder.repository.ForumRepository;
 import in.ac.iiitd.buddyfinder.repository.UserRepository;
@@ -32,6 +36,9 @@ public class EventController implements EventServiceApi {
     @Autowired
     ForumRepository forumRepository;
 
+    @Autowired
+    DeviceRepository deviceRepository;
+
     @Override
     @RequestMapping(value = EVENT_SERVICE_PATH, method = RequestMethod.POST)
     public
@@ -45,17 +52,17 @@ public class EventController implements EventServiceApi {
         event = eventRepository.save(event);
 
         if (event != null) {
-            System.out.println("event added -\n" + event.getId());
+            Application.Log("addEvent - event added -\n" + event.getId());
             User user = userRepository.findById(event.getOwnerId());
 
             if (user != null) {
                 user.addEvent(event.getId());
                 if (userRepository.save(user) != null) {
-                    System.out.println("user modified -\n" + user.getId());
+                    Application.Log("user modified -\n" + user.getId());
                     event.addMember(user.getId());
 
                     if (eventRepository.save(event) != null) {
-                        System.out.println("event modified -\n" + event.getId());
+                        Application.Log("addEvent - event modified -\n" + event.getId());
                         return true;
                     } else {
                         eventRepository.delete(event.getId());
@@ -64,7 +71,7 @@ public class EventController implements EventServiceApi {
             }
         }
 
-        System.out.println("error in adding event");
+        Application.Log("addEvent - error in adding event");
         return false;
     }
 
@@ -107,28 +114,80 @@ public class EventController implements EventServiceApi {
         if (event != null) {
             User user = userRepository.findById(memberId);
 
-            if(user != null) {
-                System.out.println("adding event to user - " + user.getId());
+            if (user != null) {
+                Application.Log("addMemberToEvent - adding event to user - " + user.getId());
                 user.addEvent(eventId);
 
-                if(userRepository.save(user) != null) {
-                    System.out.println("adding member to event - " + event.getId());
+                if (userRepository.save(user) != null) {
+                    Application.Log("addMemberToEvent - adding member to event - " + event.getId());
+                    List<String> previousMembersList = new ArrayList<>();
+
+                    for(String member : event.getMembers()) {
+                        previousMembersList.add(member);
+                    }
+
                     event.addMember(memberId);
 
+                    User member = userRepository.findById(memberId);
+
                     if (eventRepository.save(event) != null) {
+                        sendPushNotification(previousMembersList, new Data("member_add", eventId,
+                                member.getFirstName() + " joined event : " + event.getTitle()));
                         return true;
                     }
                 }
             }
         }
 
-        System.out.println("error adding member");
+        Application.Log("addMemberToEvent - error adding member");
         return false;
     }
 
     @Override
     @RequestMapping(value = EVENT_FORUM_SERVICE_PATH, method = RequestMethod.GET)
-    public @ResponseBody List<ForumMessage> getForumMessages(@PathVariable(EVENT_ID_QUERY_PARAMETER) String eventId) {
+    public
+    @ResponseBody
+    List<ForumMessage> getForumMessages(@PathVariable(EVENT_ID_QUERY_PARAMETER) String eventId) {
+        Application.Log("getForumMessages - request for forum messages - " + eventId);
         return forumRepository.findById(eventRepository.findById(eventId).getForumId()).getForumMessages();
+    }
+
+    @Override
+    @RequestMapping(value = EVENT_FORUM_SERVICE_PATH, method = RequestMethod.POST)
+    public @ResponseBody boolean sendForumMessage(@PathVariable(EVENT_ID_QUERY_PARAMETER) String eventId, @RequestBody ForumMessage forumMessage) {
+        Event event = eventRepository.findById(eventId);
+        Forum forum = forumRepository.findById(event.getForumId());
+        forum.addForumMessage(forumMessage);
+        forumRepository.save(forum);
+
+        User sender = userRepository.findById(forumMessage.getSender());
+
+        List<String> membersList = event.getMembers();
+        membersList.remove(forumMessage.getSender());
+        sendPushNotification(membersList, new Data("new_message", eventId, sender.getFirstName() + ": " + forumMessage.getMessage()));
+
+        Application.Log("sendForumMessage - message recieved at event - " + eventId + " - " + forumMessage);
+        return true;
+    }
+
+    public void sendPushNotification(List<String> membersList, Data data) {
+        if(membersList.size() > 0) {
+            new Thread() {
+                @Override
+                public void run() {
+                    List<Device> devices = deviceRepository.findAll();
+                    List<String> toSend = new ArrayList<>();
+
+                    for (Device device : devices) {
+                        if (membersList.contains(device.getId())) {
+                            toSend.add(device.getRegistrationId());
+                        }
+                    }
+
+                    Application.Log("sendPushNotification - sending notification - " + data + " - to - " + membersList);
+                    PushNotificationController.pushMulticastNotification(toSend, data);
+                }
+            }.start();
+        }
     }
 }

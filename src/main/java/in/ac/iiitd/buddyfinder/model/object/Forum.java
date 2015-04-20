@@ -37,6 +37,10 @@ public class Forum {
         this.forumMessages = forumMessages;
     }
 
+    public void addForumMessage(ForumMessage forumMessage) {
+        forumMessages.add(forumMessage);
+    }
+
     @Override
     public String toString() {
         return "Forum{" +

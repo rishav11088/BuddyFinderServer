@@ -1,6 +1,7 @@
 package in.ac.iiitd.buddyfinder.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import in.ac.iiitd.buddyfinder.Application;
 import in.ac.iiitd.buddyfinder.model.client.PushNotificationApi;
 import in.ac.iiitd.buddyfinder.model.push.Content;
 import in.ac.iiitd.buddyfinder.model.push.Data;
@@ -34,13 +35,13 @@ public class PushNotificationController implements PushNotificationApi {
 
 //    public @ResponseBody ResponseEntity<Boolean> registerDevice(@RequestBody String regId) {
 //        Device device = new Device(regId);
-//        System.out.println("notification registation request - " + regId);
+//        Application.Log("notification registation request - " + regId);
 //        if (!deviceRepository.findAll().contains(device)) {
 //            deviceRepository.save(device);
-//            System.out.println("registered - " + regId);
+//            Application.Log("registered - " + regId);
 //            return new ResponseEntity<Boolean>(true, HttpStatus.OK);
 //        } else {
-//            System.out.println("already registered - " + regId);
+//            Application.Log("already registered - " + regId);
 //            return new ResponseEntity<Boolean>(false, HttpStatus.FOUND);
 //        }
 //    }
@@ -50,7 +51,7 @@ public class PushNotificationController implements PushNotificationApi {
     public
     @ResponseBody
     boolean registerDevice(@RequestBody Device device) {
-        System.out.println("notification registation request - " + device.getId());
+        Application.Log("registerDevice - notification registation request - " + device.getId());
         return deviceRepository.save(device) != null;
     }
 
@@ -81,11 +82,14 @@ public class PushNotificationController implements PushNotificationApi {
     @Override
     @RequestMapping(value = PushNotificationApi.PUSH_NOTIFICATION_SERVICE_PATH, method = RequestMethod.POST)
     public @ResponseBody String pushNotificationToAll(@RequestBody Data data) {
+        return pushMulticastNotification(deviceRepository.findAll().stream().map(device -> device.getRegistrationId().replaceAll("\"", "")).collect(Collectors.toList()), data);
+    }
+
+    public static String pushMulticastNotification(List<String> regIds, Data data) {
         try {
-            List<String> listStrings = deviceRepository.findAll().stream().map(device -> device.getRegistrationId().replaceAll("\"", "")).collect(Collectors.toList());
-            listStrings.add("1");
-            listStrings.add("2");
-            System.out.println("deviceRepository : " + listStrings);
+            List<String> listStrings = regIds;
+            Application.Log("pushMulticastNotification - pushing notification - " + data);
+            Application.Log("pushMulticastNotification - to devices - " + listStrings);
 //            String apiKey = API_KEY;
 //            String deviceID=deviceRepository.findAll().get(0).getRegistrationId().replaceAll("\"", "");//Device Id
             Content content = new Content(listStrings);
@@ -99,14 +103,14 @@ public class PushNotificationController implements PushNotificationApi {
             conn.setDoOutput(true);
             ObjectMapper mapper = new ObjectMapper();
             DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
-            System.out.println(mapper.writeValueAsString(content));
+            Application.Log("pushNotificationToAll - " + mapper.writeValueAsString(content));
             mapper.writeValue(wr, content);
             wr.flush();
             wr.close();
 
             int responseCode = conn.getResponseCode();
-            System.out.println("\nSending 'POST' request to URL : " + url);
-            System.out.println("Response Code : " + responseCode);
+            Application.Log("pushMulticastNotification - " + "\nSending 'POST' request to URL : " + url);
+            Application.Log("pushMulticastNotification - " + "Response Code : " + responseCode);
 
             BufferedReader in = new BufferedReader(
                     new InputStreamReader(conn.getInputStream()));
@@ -118,7 +122,7 @@ public class PushNotificationController implements PushNotificationApi {
             }
             in.close();
 
-            System.out.println(response.toString());
+            Application.Log("pushMulticastNotification - " + response.toString());
 
 //            GcmResponse gcmResponse = mapper.readValue(response, GcmResponse.class);
             return new ObjectMapper().writeValueAsString(response);
@@ -127,7 +131,7 @@ public class PushNotificationController implements PushNotificationApi {
             e.printStackTrace();
         }
 
-        return "{ }";
+        return "";
     }
 
 
@@ -151,8 +155,8 @@ public class PushNotificationController implements PushNotificationApi {
 //
 //        GcmNotification gcmNotification = new GcmNotification(data, listStrings);
 //
-//        System.out.println(gcmNotification.getData().toJSON());
-//        System.out.println(gcmNotification.toJSON());
+//        Application.Log(gcmNotification.getData().toJSON());
+//        Application.Log(gcmNotification.toJSON());
 //
 //        try {
 //            GcmResponse gcmResponse = gcmService.pushToGcm(gcmNotification.toJSON());

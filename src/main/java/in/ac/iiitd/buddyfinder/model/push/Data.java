@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Created by Rishav Jain on 17-04-2015.
+ * Data
  */
 public class Data {
     private String type;
